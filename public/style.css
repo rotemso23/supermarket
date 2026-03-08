@@ -132,6 +132,9 @@ button {
   margin-top: 12px;
   color: var(--text-muted);
   font-size: 0.9rem;
+}
+
+.loading:not(.hidden) {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -162,8 +165,18 @@ button {
   font-size: 0.9rem;
 }
 
+.info {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #f0f9ff;
+  border: 1px solid #7dd3fc;
+  border-radius: var(--radius);
+  color: #0369a1;
+  font-size: 0.9rem;
+}
+
 .hidden {
-  display: none !important;
+  display: none;
 }
 
 /* List section */
@@ -309,7 +322,22 @@ ul.ingredient-list {
 .view-toggle {
   display: flex;
   gap: 6px;
+  margin-bottom: 10px;
+}
+
+#show-sources-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
   margin-bottom: 16px;
+  user-select: none;
+}
+
+#show-sources-toggle.hidden {
+  display: none;
 }
 
 .view-toggle button {
@@ -348,13 +376,13 @@ ul.ingredient-list {
   line-height: 1.4;
 }
 
+.ingredient-amount-row {
+  display: block;
+}
+
 .recipe-tag {
-  display: inline-block;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0 5px;
-  font-size: 0.75rem;
+  display: inline;
+  font-size: 0.8rem;
   color: var(--text-muted);
-  white-space: nowrap;
+  margin-left: 4px;
 }

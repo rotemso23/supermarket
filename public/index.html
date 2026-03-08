@@ -24,8 +24,8 @@
         />
         <button id="fetch-btn">Add Recipe</button>
       </div>
-      <div id="loading" class="loading hidden">Fetching recipe...</div>
-      <div id="error-msg" class="error hidden"></div>
+      <div id="loading" class="loading hidden" role="status" aria-live="polite">Fetching recipe...</div>
+      <div id="error-msg" class="error hidden" role="alert"></div>
     </section>
 
     <section id="list-section" class="hidden">
@@ -40,6 +40,10 @@
         <button id="view-recipe-btn" class="active">By Recipe</button>
         <button id="view-ingredient-btn">By Ingredient</button>
       </div>
+      <label id="show-sources-toggle" class="hidden">
+        <input type="checkbox" id="show-sources-cb" />
+        Show recipe source per ingredient
+      </label>
       <div id="recipes-container"></div>
     </section>
   </div>

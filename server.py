@@ -1,4 +1,7 @@
+import ipaddress
 import json
+import re
+import socket
 from urllib.parse import urlparse
 
 import requests
@@ -6,6 +9,27 @@ from bs4 import BeautifulSoup
 from flask import Flask, jsonify, request, send_from_directory
 
 app = Flask(__name__, static_folder='public', static_url_path='')
+
+_PRIVATE_RANGES = (
+    ipaddress.ip_network('127.0.0.0/8'),
+    ipaddress.ip_network('10.0.0.0/8'),
+    ipaddress.ip_network('172.16.0.0/12'),
+    ipaddress.ip_network('192.168.0.0/16'),
+    ipaddress.ip_network('169.254.0.0/16'),
+    ipaddress.ip_network('::1/128'),
+    ipaddress.ip_network('fc00::/7'),
+)
+
+def _is_safe_url(url):
+    """Return False if the URL resolves to a loopback or private address."""
+    try:
+        hostname = urlparse(url).hostname
+        if not hostname:
+            return False
+        addr = ipaddress.ip_address(socket.gethostbyname(hostname))
+        return not any(addr in net for net in _PRIVATE_RANGES)
+    except Exception:
+        return False
 
 HEADERS = {
     'User-Agent': (
@@ -32,12 +56,13 @@ def find_recipe_in_jsonld(data):
     if not isinstance(data, dict):
         return None
 
-    # @graph wrapper
+    # @graph wrapper — if present, search only within it
     if '@graph' in data and isinstance(data['@graph'], list):
         for item in data['@graph']:
             result = find_recipe_in_jsonld(item)
             if result:
                 return result
+        return None
 
     # Direct Recipe object
     rtype = data.get('@type', '')
@@ -105,20 +130,42 @@ def extract_from_html(soup):
     return None
 
 
+_WATER_RE = re.compile(
+    r'^[\d\s/½¼¾⅓⅔.–-]*'          # optional quantity (numbers, fractions, dashes)
+    r'(?:cups?|c\.|tbsp\.?|tsp\.?|oz\.?|ml|l|liters?|quarts?|qt\.?)?\s*'  # optional unit
+    r'water\s*$',
+    re.IGNORECASE
+)
+
+def filter_ingredients(result):
+    if result and 'ingredients' in result:
+        result['ingredients'] = [
+            i for i in result['ingredients']
+            if not _WATER_RE.match(i.strip())
+        ]
+    return result
+
+
 def parse_html(html):
     soup = BeautifulSoup(html, 'html.parser')
-    return extract_from_jsonld(soup) or extract_from_html(soup)
+    return filter_ingredients(extract_from_jsonld(soup) or extract_from_html(soup))
 
 
 # ── Fetch strategies ──────────────────────────────────────────────────────────
 
+MAX_RESPONSE_BYTES = 10 * 1024 * 1024  # 10 MB
+
 def fetch_with_requests(url):
     """Fast fetch using requests. Returns (html, error_dict)."""
     try:
-        response = requests.get(url, headers=HEADERS, timeout=10)
+        response = requests.get(url, headers=HEADERS, timeout=10, max_redirects=5)
         if response.ok:
+            if len(response.content) > MAX_RESPONSE_BYTES:
+                return None, {'exception': 'Response too large'}
             return response.text, None
         return None, {'status': response.status_code}
+    except requests.TooManyRedirects:
+        return None, {'exception': 'Too many redirects'}
     except requests.Timeout:
         return None, {'timeout': True}
     except requests.RequestException as e:
@@ -131,25 +178,26 @@ def fetch_with_playwright(url):
         from playwright.sync_api import sync_playwright
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
-            context = browser.new_context(
-                user_agent=HEADERS['User-Agent'],
-                locale='en-US',
-                viewport={'width': 1280, 'height': 800},
-            )
-            page = context.new_page()
-            # Block images, fonts, and media to load faster
-            page.route('**/*.{png,jpg,jpeg,gif,webp,svg,ico,woff,woff2,ttf,mp4,webm}',
-                       lambda route: route.abort())
-            response = page.goto(url, timeout=25000, wait_until='domcontentloaded')
-            if response and response.ok:
-                # Wait briefly for any JS to populate ingredient data
-                page.wait_for_timeout(1500)
-                html = page.content()
+            try:
+                context = browser.new_context(
+                    user_agent=HEADERS['User-Agent'],
+                    locale='en-US',
+                    viewport={'width': 1280, 'height': 800},
+                )
+                page = context.new_page()
+                # Block images, fonts, and media to load faster
+                page.route('**/*.{png,jpg,jpeg,gif,webp,svg,ico,woff,woff2,ttf,mp4,webm}',
+                           lambda route: route.abort())
+                response = page.goto(url, timeout=25000, wait_until='domcontentloaded')
+                if response and response.ok:
+                    # Wait briefly for any JS to populate ingredient data
+                    page.wait_for_timeout(1500)
+                    html = page.content()
+                    return html, None
+                status = response.status if response else 0
+                return None, {'status': status}
+            finally:
                 browser.close()
-                return html, None
-            status = response.status if response else 0
-            browser.close()
-            return None, {'status': status}
     except Exception as e:
         return None, {'exception': str(e)}
 
@@ -173,6 +221,9 @@ def parse():
         if parsed.scheme not in ('http', 'https'):
             raise ValueError()
     except Exception:
+        return jsonify({'error': 'Invalid URL.'}), 400
+
+    if not _is_safe_url(url):
         return jsonify({'error': 'Invalid URL.'}), 400
 
     # ── Strategy 1: fast requests ────────────────────────────────────────────
