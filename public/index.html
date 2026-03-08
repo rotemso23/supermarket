@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shopping List</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🛒 Shopping List</h1>
+      <p class="subtitle">Paste a recipe link to build your list</p>
+    </header>
+
+    <section class="url-section">
+      <div class="input-row">
+        <input
+          id="recipe-url"
+          type="url"
+          placeholder="https://www.allrecipes.com/recipe/..."
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button id="fetch-btn">Add Recipe</button>
+      </div>
+      <div id="loading" class="loading hidden">Fetching recipe...</div>
+      <div id="error-msg" class="error hidden"></div>
+    </section>
+
+    <section id="list-section" class="hidden">
+      <div class="list-header">
+        <h2>Ingredients</h2>
+        <div class="list-actions">
+          <button id="copy-btn" class="btn-secondary">Copy unchecked</button>
+          <button id="clear-btn" class="btn-danger">Clear all</button>
+        </div>
+      </div>
+      <div id="recipes-container"></div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
