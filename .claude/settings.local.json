@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(pip install flask requests beautifulsoup4)"
-    ]
-  }
-}
