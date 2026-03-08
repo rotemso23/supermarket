@@ -33,12 +33,22 @@ JSON-LD parsing handles: root object, array of objects, `@graph` wrapper, `@type
 
 HTML fallback selectors: `[itemprop="recipeIngredient"]`, `[class*="ingredient"] li`, `.ingredients li`, etc.
 
+## View modes
+Two toggle buttons let the user switch how ingredients are displayed:
+- **By Recipe** (`view-recipe-btn`) — ingredients grouped under each recipe, with a "view recipe" link and a remove (✕) button per recipe
+- **By Ingredient** (`view-ingredient-btn`) — all ingredients merged and sorted alphabetically; duplicates across recipes are grouped into one row showing original amounts and recipe tags; checking one row checks all instances across recipes
+
+Active view is highlighted with an `.active` class on the button. `state.viewMode` (`'recipe'` | `'ingredient'`) is persisted in localStorage.
+
+Ingredient normalization (for grouping) strips quantities, units, and parenthetical notes from ingredient text.
+
 ## Frontend state (localStorage key: `supermarket_list`)
 ```json
 {
   "recipes": [
     { "title": "...", "url": "...", "ingredients": [{ "text": "...", "checked": false }] }
-  ]
+  ],
+  "viewMode": "recipe"
 }
 ```
 

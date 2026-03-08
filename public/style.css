@@ -254,7 +254,7 @@ ul.ingredient-list {
 
 .ingredient-item {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 10px;
   padding: 7px 6px;
   border-radius: 6px;
@@ -286,4 +286,75 @@ ul.ingredient-list {
 .ingredient-item.checked span {
   text-decoration: line-through;
   opacity: var(--checked-opacity);
+}
+
+/* Grouped ingredient view overrides */
+.ingredient-item.checked .ingredient-text-wrapper {
+  opacity: var(--checked-opacity);
+}
+
+.ingredient-item.checked .ingredient-text-wrapper span {
+  opacity: 1; /* parent already handles opacity */
+}
+
+.ingredient-item.checked .ingredient-name {
+  text-decoration: line-through;
+}
+
+.ingredient-item.checked .recipe-tag {
+  text-decoration: none;
+}
+
+/* View toggle */
+.view-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.view-toggle button {
+  padding: 5px 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.view-toggle button:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.view-toggle button.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* Grouped ingredient text layout */
+.ingredient-text-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ingredient-amounts {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.recipe-tag {
+  display: inline-block;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 5px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
