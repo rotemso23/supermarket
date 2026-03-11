@@ -3,50 +3,139 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shopping List</title>
+  <title>Supermarket</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>🛒 Shopping List</h1>
-      <p class="subtitle">Paste a recipe link to build your list</p>
-    </header>
 
-    <section class="url-section">
-      <div class="input-row">
-        <input
-          id="recipe-url"
-          type="url"
-          placeholder="https://www.allrecipes.com/recipe/..."
-          autocomplete="off"
-          spellcheck="false"
-        />
-        <button id="fetch-btn">Add Recipe</button>
+  <nav class="topnav">
+    <button class="topnav__brand" data-nav="home">🛒 Supermarket</button>
+    <div class="topnav__links">
+      <button class="topnav__link" data-nav="list">Shopping List</button>
+      <button class="topnav__link" data-nav="library">Recipe Library</button>
+    </div>
+  </nav>
+
+  <main class="screens">
+
+    <!-- SCREEN: Home -->
+    <section class="screen screen--active" id="screen-home">
+      <div class="hero">
+        <div class="hero__badge">Smart Shopping</div>
+        <h1 class="hero__title">Your Kitchen,<br>Organized.</h1>
+        <p class="hero__sub">Paste a recipe link. Build a list. Shop smarter.</p>
       </div>
-      <div id="loading" class="loading hidden" role="status" aria-live="polite">Fetching recipe...</div>
-      <div id="error-msg" class="error hidden" role="alert"></div>
+      <div class="nav-cards">
+        <button class="nav-card" data-nav="list">
+          <div class="nav-card__icon">📋</div>
+          <div class="nav-card__title">Shopping List</div>
+          <div class="nav-card__desc">Add recipes and track ingredients</div>
+        </button>
+        <button class="nav-card" data-nav="library">
+          <div class="nav-card__icon">📚</div>
+          <div class="nav-card__title">Recipe Library</div>
+          <div class="nav-card__desc">Browse your saved recipes</div>
+        </button>
+        <button class="nav-card nav-card--muted" data-nav="tbd">
+          <div class="nav-card__icon">✨</div>
+          <div class="nav-card__title">Coming Soon</div>
+          <div class="nav-card__desc">Something new is cooking</div>
+        </button>
+      </div>
     </section>
 
-    <section id="list-section" class="hidden">
-      <div class="list-header">
-        <h2>Ingredients</h2>
-        <div class="list-actions">
-          <button id="copy-btn" class="btn-secondary">Copy unchecked</button>
-          <button id="clear-btn" class="btn-danger">Clear all</button>
+    <!-- SCREEN: Shopping List -->
+    <section class="screen" id="screen-list">
+      <div class="screen-header">
+        <button class="back-btn" data-nav="home">← Home</button>
+        <h2 class="screen-title">Shopping List</h2>
+      </div>
+      <div class="screen-body">
+
+        <section class="url-section">
+          <div class="input-row">
+            <input
+              id="recipe-url"
+              type="url"
+              placeholder="https://www.allrecipes.com/recipe/..."
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button id="fetch-btn">Add Recipe</button>
+          </div>
+          <div id="loading" class="loading hidden" role="status" aria-live="polite">Fetching recipe...</div>
+          <div id="error-msg" class="error hidden" role="alert"></div>
+        </section>
+
+        <section class="manual-section">
+          <div class="input-row">
+            <input
+              id="ingredient-input"
+              type="text"
+              placeholder="Add an item, e.g. olive oil"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button id="add-ingredient-btn" class="btn-secondary">Add</button>
+          </div>
+        </section>
+
+        <section id="list-section" class="hidden">
+          <div class="list-header">
+            <h2>Ingredients</h2>
+            <div class="list-actions">
+              <button id="copy-btn" class="btn-secondary">Copy unchecked</button>
+              <button id="clear-btn" class="btn-danger">Clear all</button>
+            </div>
+          </div>
+          <div class="view-toggle">
+            <button id="view-recipe-btn" class="active">By Recipe</button>
+            <button id="view-ingredient-btn">By Ingredient</button>
+          </div>
+          <label id="show-sources-toggle" class="hidden">
+            <input type="checkbox" id="show-sources-cb" />
+            Show recipe source per ingredient
+          </label>
+          <div id="recipes-container"></div>
+        </section>
+
+      </div>
+    </section>
+
+    <!-- SCREEN: Recipe Library -->
+    <section class="screen" id="screen-library">
+      <div class="screen-header">
+        <button class="back-btn" data-nav="home">← Home</button>
+        <h2 class="screen-title">Recipe Library</h2>
+      </div>
+      <div class="screen-body">
+        <div id="library-empty" class="empty-state hidden">
+          <div class="empty-state__icon">📖</div>
+          <p>No saved recipes yet.</p>
+          <p class="text-muted">Save a recipe from the Shopping List screen.</p>
+        </div>
+        <ul id="library-list" class="library-grid"></ul>
+      </div>
+    </section>
+
+    <!-- SCREEN: Coming Soon -->
+    <section class="screen" id="screen-tbd">
+      <div class="screen-header">
+        <button class="back-btn" data-nav="home">← Home</button>
+        <h2 class="screen-title">Coming Soon</h2>
+      </div>
+      <div class="screen-body">
+        <div class="empty-state">
+          <div class="empty-state__icon">🚧</div>
+          <p>This feature is under construction.</p>
+          <p class="text-muted">Check back later!</p>
         </div>
       </div>
-      <div class="view-toggle">
-        <button id="view-recipe-btn" class="active">By Recipe</button>
-        <button id="view-ingredient-btn">By Ingredient</button>
-      </div>
-      <label id="show-sources-toggle" class="hidden">
-        <input type="checkbox" id="show-sources-cb" />
-        Show recipe source per ingredient
-      </label>
-      <div id="recipes-container"></div>
     </section>
-  </div>
+
+  </main>
 
   <script src="app.js"></script>
 </body>

@@ -1,8 +1,11 @@
 const STORAGE_KEY = 'supermarket_list';
+const SAVED_KEY = 'supermarket_saved';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 // state.recipes = [{ title, url, ingredients: [{ text, checked }] }]
 let state = { recipes: [], viewMode: 'recipe', showSources: true };
+// savedRecipes = [{ id, title, url, ingredients: [string] }]
+let savedRecipes = [];
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const urlInput          = document.getElementById('recipe-url');
@@ -17,6 +20,8 @@ const viewRecipeBtn     = document.getElementById('view-recipe-btn');
 const viewIngredientBtn = document.getElementById('view-ingredient-btn');
 const showSourcesToggle = document.getElementById('show-sources-toggle');
 const showSourcesCb     = document.getElementById('show-sources-cb');
+const libraryList       = document.getElementById('library-list');
+const libraryEmpty      = document.getElementById('library-empty');
 
 // ── Persistence ───────────────────────────────────────────────────────────────
 function saveState() {
@@ -34,10 +39,149 @@ function loadState() {
     }
     if (!state.viewMode) state.viewMode = 'recipe';
     if (state.showSources === undefined) state.showSources = true;
+    if (state.activeScreen && ['home', 'list', 'library', 'tbd'].includes(state.activeScreen)) {
+      currentScreen = state.activeScreen;
+    }
   } catch {
-    state = { recipes: [], viewMode: 'recipe' };
+    state = { recipes: [], viewMode: 'recipe', showSources: true };
   }
 }
+
+function loadSaved() {
+  try {
+    const raw = localStorage.getItem(SAVED_KEY);
+    if (raw) savedRecipes = JSON.parse(raw);
+    if (!Array.isArray(savedRecipes)) savedRecipes = [];
+    savedRecipes = savedRecipes.filter(r =>
+      r && typeof r.id === 'string' && typeof r.url === 'string' && Array.isArray(r.ingredients)
+    );
+  } catch {
+    savedRecipes = [];
+  }
+}
+
+function saveSavedRecipes() {
+  localStorage.setItem(SAVED_KEY, JSON.stringify(savedRecipes));
+}
+
+// ── Saved recipes library ─────────────────────────────────────────────────────
+function isSavedUrl(url) {
+  if (!url) return false;
+  return savedRecipes.some(r => r.url === url);
+}
+
+function isActiveUrl(url) {
+  if (!url) return false;
+  return state.recipes.some(r => r.url === url);
+}
+
+function saveRecipe(recipeIdx) {
+  const recipe = state.recipes[recipeIdx];
+  if (isSavedUrl(recipe.url)) return;
+  savedRecipes.push({
+    id: crypto.randomUUID(),
+    title: recipe.title,
+    url: recipe.url,
+    ingredients: recipe.ingredients.map(ing => ing.text),
+  });
+  saveSavedRecipes();
+  renderLibrary();
+  render(); // refresh save button state
+}
+
+function addSavedToList(id) {
+  const saved = savedRecipes.find(r => r.id === id);
+  if (!saved) return;
+  if (isActiveUrl(saved.url)) return;
+  state.recipes.push({
+    title: saved.title,
+    url: saved.url,
+    ingredients: saved.ingredients.map(text => ({ text, checked: false })),
+  });
+  saveState();
+  renderLibrary(); // refresh "Add to list" disabled state
+  navigate('list'); // navigate calls render()
+}
+
+function deleteSaved(id) {
+  savedRecipes = savedRecipes.filter(r => r.id !== id);
+  saveSavedRecipes();
+  renderLibrary();
+  render(); // refresh save button state
+}
+
+function renderLibrary() {
+  if (savedRecipes.length === 0) {
+    libraryEmpty.classList.remove('hidden');
+    libraryList.innerHTML = '';
+    return;
+  }
+
+  libraryEmpty.classList.add('hidden');
+  libraryList.innerHTML = '';
+
+  savedRecipes.forEach(saved => {
+    const li = document.createElement('li');
+    li.className = 'library-card';
+
+    const titleLink = document.createElement('a');
+    titleLink.className = 'library-card__title';
+    titleLink.textContent = saved.title;
+    titleLink.href = saved.url;
+    titleLink.target = '_blank';
+    titleLink.rel = 'noopener noreferrer';
+
+    const meta = document.createElement('div');
+    meta.className = 'library-card__meta';
+    meta.textContent = `${saved.ingredients.length} ingredient${saved.ingredients.length !== 1 ? 's' : ''}`;
+
+    const actions = document.createElement('div');
+    actions.className = 'library-card__actions';
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn-secondary btn-save-add';
+    addBtn.textContent = 'Add to list';
+    const alreadyActive = isActiveUrl(saved.url);
+    addBtn.disabled = alreadyActive;
+    addBtn.title = alreadyActive ? 'Already in your list' : 'Add to shopping list';
+    addBtn.addEventListener('click', () => addSavedToList(saved.id));
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'remove-recipe-btn';
+    deleteBtn.textContent = '✕';
+    deleteBtn.title = 'Remove from saved';
+    deleteBtn.addEventListener('click', () => deleteSaved(saved.id));
+
+    actions.appendChild(addBtn);
+    actions.appendChild(deleteBtn);
+    li.appendChild(titleLink);
+    li.appendChild(meta);
+    li.appendChild(actions);
+    libraryList.appendChild(li);
+  });
+}
+
+// ── Screen router ─────────────────────────────────────────────────────────────
+let currentScreen = 'home';
+
+function navigate(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('screen--active'));
+  document.querySelectorAll('.topnav__link').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.nav === id);
+  });
+  document.getElementById('screen-' + id).classList.add('screen--active');
+  currentScreen = id;
+  state.activeScreen = id;
+  saveState();
+  if (id === 'library') renderLibrary();
+  if (id === 'list') render();
+  window.scrollTo(0, 0);
+}
+
+document.addEventListener('click', e => {
+  const target = e.target.closest('[data-nav]');
+  if (target) navigate(target.dataset.nav);
+});
 
 // ── Ingredient grouping ───────────────────────────────────────────────────────
 function normalizeIngredient(text) {
@@ -211,7 +355,12 @@ function render() {
 }
 
 function renderByRecipe() {
-  state.recipes.forEach((recipe, recipeIdx) => {
+  // Render My Items last so recipe groups dominate the visual hierarchy
+  const sorted = [
+    ...state.recipes.map((r, i) => ({ r, i })).filter(({ r }) => r.url !== null),
+    ...state.recipes.map((r, i) => ({ r, i })).filter(({ r }) => r.url === null),
+  ];
+  sorted.forEach(({ r: recipe, i: recipeIdx }) => {
     const group = document.createElement('div');
     group.className = 'recipe-group';
 
@@ -235,6 +384,17 @@ function renderByRecipe() {
       link.rel = 'noopener noreferrer';
       link.textContent = 'view recipe';
       rightSide.appendChild(link);
+    }
+
+    if (recipe.url) {
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'save-recipe-btn';
+      const alreadySaved = isSavedUrl(recipe.url);
+      saveBtn.textContent = alreadySaved ? 'saved ✓' : 'save';
+      saveBtn.disabled = alreadySaved;
+      saveBtn.title = alreadySaved ? 'Already in your saved library' : 'Save recipe for reuse later';
+      if (!alreadySaved) saveBtn.addEventListener('click', () => saveRecipe(recipeIdx));
+      rightSide.appendChild(saveBtn);
     }
 
     const removeBtn = document.createElement('button');
@@ -373,6 +533,10 @@ async function fetchRecipe() {
     }
 
     // Append recipe to state
+    if (!Array.isArray(data.ingredients) || data.ingredients.length === 0) {
+      showError('No ingredients found on this page.');
+      return;
+    }
     state.recipes.push({
       title: data.title,
       url: url,
@@ -387,6 +551,28 @@ async function fetchRecipe() {
   } finally {
     setLoading(false);
   }
+}
+
+// ── Manual ingredient add ─────────────────────────────────────────────────────
+const MY_ITEMS_TITLE = 'My Items';
+
+function addManualItem() {
+  const ingredientInput = document.getElementById('ingredient-input');
+  const text = ingredientInput.value.trim();
+  if (!text) return;
+
+  // Find or create the "My Items" group (always last in the recipes array)
+  let myItems = state.recipes.find(r => r.url === null && r.title === MY_ITEMS_TITLE);
+  if (!myItems) {
+    myItems = { title: MY_ITEMS_TITLE, url: null, ingredients: [] };
+    state.recipes.push(myItems);
+  }
+
+  myItems.ingredients.push({ text, checked: false });
+  saveState();
+  render();
+  ingredientInput.value = '';
+  ingredientInput.focus();
 }
 
 // ── Copy unchecked ────────────────────────────────────────────────────────────
@@ -430,7 +616,7 @@ function copyUnchecked() {
 // ── Clear all ─────────────────────────────────────────────────────────────────
 function clearAll() {
   if (!confirm('Clear the entire shopping list?')) return;
-  state = { recipes: [], viewMode: state.viewMode };
+  state = { recipes: [], viewMode: state.viewMode, showSources: state.showSources, activeScreen: state.activeScreen };
   saveState();
   render();
 }
@@ -464,9 +650,12 @@ showSourcesCb.addEventListener('change', () => { state.showSources = showSources
 // ── Event listeners ───────────────────────────────────────────────────────────
 fetchBtn.addEventListener('click', fetchRecipe);
 urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') fetchRecipe(); });
+document.getElementById('add-ingredient-btn').addEventListener('click', addManualItem);
+document.getElementById('ingredient-input').addEventListener('keydown', e => { if (e.key === 'Enter') addManualItem(); });
 copyBtn.addEventListener('click', copyUnchecked);
 clearBtn.addEventListener('click', clearAll);
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 loadState();
-render();
+loadSaved();
+navigate(currentScreen);

@@ -97,6 +97,13 @@ def extract_from_html(soup):
         {'itemprop': 'ingredients'},
     ]
     css_selectors = [
+        # WP Recipe Maker (wprm-recipe-ingredient are the <li> elements themselves)
+        '.wprm-recipe-ingredient',
+        # Tasty Recipes plugin
+        '.tasty-recipes-ingredients-body li',
+        # Mediavine Create
+        '.mv-create-ingredients li',
+        # Generic fallbacks (broad — listed last to avoid false positives)
         '[class*="ingredient"] li',
         '[class*="Ingredient"] li',
         '.ingredients li',
