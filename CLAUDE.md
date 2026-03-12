@@ -8,7 +8,7 @@ Paste a recipe URL → extracts ingredients automatically → creates a checklis
 cd C:\Users\משתמש\Desktop\supermarket
 python server.py
 ```
-Then open http://localhost:3000 in the browser. Keep the terminal open.
+Then open http://localhost:3001 in the browser. Keep the terminal open.
 
 ## Tech stack
 - **Backend**: Python + Flask (server.py)
@@ -51,6 +51,11 @@ Ingredient normalization (for grouping) strips quantities, units, and parentheti
   "viewMode": "recipe"
 }
 ```
+
+## Mandatory workflow rules
+- **ALWAYS run the `code-reviewer` agent immediately after writing or modifying any code.** No exceptions — do not wait for the user to ask. This is a hard requirement.
+- **ALWAYS run the `debugger` agent when something isn't working.** Do not guess or retry blindly.
+- **ALWAYS run the `ux-designer` agent for UI/UX questions.**
 
 ## Known limitations
 - Sites that block datacenter/cloud IPs (e.g. Dotdash Meredith: allrecipes.com, simplyrecipes.com) return 402 when tested from cloud environments but work fine from a home IP

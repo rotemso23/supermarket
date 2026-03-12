@@ -15,6 +15,7 @@
     <div class="topnav__links">
       <button class="topnav__link" data-nav="list">Shopping List</button>
       <button class="topnav__link" data-nav="library">Recipe Library</button>
+      <button class="topnav__link" data-nav="cook">What Can I Cook?</button>
     </div>
   </nav>
 
@@ -38,10 +39,10 @@
           <div class="nav-card__title">Recipe Library</div>
           <div class="nav-card__desc">Browse your saved recipes</div>
         </button>
-        <button class="nav-card nav-card--muted" data-nav="tbd">
-          <div class="nav-card__icon">✨</div>
-          <div class="nav-card__title">Coming Soon</div>
-          <div class="nav-card__desc">Something new is cooking</div>
+        <button class="nav-card" data-nav="cook">
+          <div class="nav-card__icon">🍳</div>
+          <div class="nav-card__title">What Can I Cook?</div>
+          <div class="nav-card__desc">Find recipes using what you have</div>
         </button>
       </div>
     </section>
@@ -120,22 +121,31 @@
       </div>
     </section>
 
-    <!-- SCREEN: Coming Soon -->
-    <section class="screen" id="screen-tbd">
+    <!-- SCREEN: What Can I Cook? -->
+    <section class="screen" id="screen-cook">
       <div class="screen-header">
         <button class="back-btn" data-nav="home">← Home</button>
-        <h2 class="screen-title">Coming Soon</h2>
+        <h2 class="screen-title">What Can I Cook?</h2>
       </div>
       <div class="screen-body">
-        <div class="empty-state">
-          <div class="empty-state__icon">🚧</div>
-          <p>This feature is under construction.</p>
-          <p class="text-muted">Check back later!</p>
-        </div>
+        <section class="pantry-input-section">
+          <div class="input-row">
+            <input id="pantry-input" type="text"
+                   placeholder="e.g. eggs, olive oil, flour"
+                   autocomplete="off" spellcheck="false" />
+            <button id="pantry-add-btn" class="btn-secondary">Add</button>
+          </div>
+          <div id="pantry-chips" class="pantry-chips"></div>
+        </section>
+        <section id="cook-results"></section>
       </div>
     </section>
 
   </main>
+
+  <div id="library-popover" class="library-popover hidden" aria-label="Ingredients">
+    <ul class="library-popover__list"></ul>
+  </div>
 
   <script src="app.js"></script>
 </body>
